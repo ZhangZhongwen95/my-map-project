@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Historical Treaties Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        #timer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .hidden-area {
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid #000;
+            z-index: 1000;
+        }
+</style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="timer">1765</div>
+    <script>
+        const map = L.map('map').setView([20.0, 0.0], 2); // Centered globally
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+        }).addTo(map);
+
+        const events = [
+            { date: "1765-08-12", event: "Firmaund from the Mogul confirming Nawab's grants", location: [25.4358, 81.8463], type: "treaty" },
+            { date: "1765-08-16", event: "Treaty between Nawab Shujah-ul-Dowlah and English Company", location: [25.4358, 81.8463], type: "treaty" },
+            { date: "1765-08-19", event: "Agreement between King Shah Aulun and Company for tribute", location: [25.4358, 81.8463], type: "agreement" },
+            { date: "1765-08-28", event: "Grant from Nawab of Arcot for Company’s Jaghiie", location: [12.9165, 79.1325], type: "grant" },
+            { date: "1765-09-30", event: "Agreement between Nawab Nudjum-ul-Dowlah and Company", location: [25.4358, 81.8463], type: "agreement" },
+            { date: "1766-01-12", event: "Agreement with Bance of Kattywar", location: [23.2156, 69.6003], type: "agreement" },
+            { date: "1767-02-23", event: "Grant from Hyder Ali Khan Bahadur", location: [11.9404, 75.9867], type: "grant" },
+            { date: "1767-05-19", event: "Treaty and Agreement between English East India Company and Nawab Syed-ul-Dowla", location: [24.633, 77.2167], type: "treaty" },
+            { date: "1767-11-12", event: "Treaty with Nizam for Northern Circars", location: [17.3850, 78.4867], type: "treaty" },
+            { date: "1768-02-23", event: "Treaty of perpetual friendship and alliance with Nawab of Carnatic and Sobah of Deccan", location: [13.0827, 80.2707], type: "treaty" },
+            { date: "1768-11-29", event: "Treaty between Company and Vizier Shujah-ul-Dowlah", location: [26.8467, 80.9462], type: "treaty" },
+            { date: "1780-06-22", event: "Partition Treaty of Mysore", location: [12.2958, 76.6394], type: "treaty" },
+            { date: "1780-07-08", event: "Subsidizing Treaty with Raja of Mysore", location: [12.2958, 76.6394], type: "treaty" },
+            { date: "1780-10-25", event: "Treaty with Raja of Tanjore", location: [10.7870, 79.1378], type: "treaty" },
+            { date: "1780-01-18", event: "Treaty of Friendship with Imam of Muscat", location: [23.5859, 58.5933], type: "treaty" },
+            { date: "1780-05-13", event: "Treaty with Nawab of Surat", location: [21.1702, 72.8311], type: "treaty" },
+            { date: "1780-08-26", event: "Articles of Agreement for Desh Cavelly and Talem Cavelly", location: [8.7139, 77.6845], type: "agreement" },
+            { date: "1780-10-12", event: "Treaty of Alliance and Defense with Nizam", location: [17.3850, 78.4867], type: "treaty" },
+            { date: "1781-01-01", event: "Political Treaty with King of Persia", location: [35.6892, 51.3890], type: "treaty" },
+            { date: "1781-01-01", event: "Commercial Treaty with King of Persia", location: [35.6892, 51.3890], type: "treaty" },
+            { date: "1781-07-31", event: "Treaty with Azim-ud-Daula for Carnatic Succession", location: [13.0827, 80.2707], type: "treaty" },
+            { date: "1781-10-06", event: "Treaty of Alliance with Raja of Nepal", location: [27.7172, 85.3240], type: "treaty" },
+            { date: "1781-11-10", event: "Treaty with Nawab Vizier Saadat Ali", location: [26.8467, 80.9462], type: "treaty" },
+            { date: "1800-07-08", event: "Subsidy Treaty with Mysore King", location: [12.2958, 76.6394], type: "treaty" },
+            { date: "1800-10-25", event: "Treaty with Tanjore King", location: [10.7870, 79.1378], type: "sovereignty" },
+            { date: "1800-01-18", event: "Friendship Treaty with the Imam of Muscat", location: [23.5859, 58.5933], type: "treaty" },
+            { date: "1800-05-13", event: "Treaty with the Nawab of Surat", location: [21.1702, 72.8311], type: "cession" },
+            { date: "1800-08-26", event: "Agreement on Desh Kaveli and Talem Kaveli", location: [8.7139, 77.6845], type: "agreement" },
+            { date: "1800-10-12", event: "Alliance and Defense Treaty with the Nizam", location: [17.3850, 78.4867], type: "alliance" },
+            { date: "1801-01-01", event: "Political Treaty with the King of Persia", location: [35.6892, 51.3890], type: "political" },
+            { date: "1801-01-01", event: "Trade Treaty with the King of Persia", location: [35.6892, 51.3890], type: "trade" },
+            { date: "1801-07-31", event: "Treaty with Azim-ud-Daula on Carnatic Succession", location: [10.7905, 78.7047], type: "succession" },
+            { date: "1801-10-06", event: "Alliance Treaty with the King of Nepal", location: [27.7172, 85.3240], type: "alliance" },
+            { date: "1801-11-10", event: "Treaty with Nawab Vizier Saadat Ali", location: [26.8467, 80.9462], type: "succession" },
+            { date: "1802-02-17", event: "Final arrangement with Nawab Azier Saadut Ali Khan", location: [26.8467, 80.9462], type: "arrangement" },
+            { date: "1802-03-01", event: "Articles of Convention between General Duncan and Amind Rao Gwicowar", location: [22.3072, 73.1812], type: "convention" },
+            { date: "1802-04-12", event: "Commercial Treaty with Nizam", location: [17.3850, 78.4867], type: "treaty" },
+            { date: "1802-07-06", event: "Treaty of Alliance and Subsidy with Amind Rao Gwicowar", location: [22.3072, 73.1812], type: "treaty" },
+            { date: "1802-07-24", event: "Treaty with Nawab of Furruckahad", location: [27.4975, 79.5793], type: "treaty" },
+            { date: "1802-07-29", event: "Agreement between Resident at Baroda and Anund Rao Gwicowar", location: [22.3072, 73.1812], type: "agreement" },
+            { date: "1802-11-01", event: "Treaty with King of Queda", location: [6.1248, 100.3673], type: "treaty" },
+            { date: "1802-12-31", event: "Treaty of Alliance and Subsidy with Peshwa", location: [18.5204, 73.8567], type: "treaty" },
+            { date: "1803-01-25", event: "Agreement with Anund Rao Gwicowar", location: [22.3072, 73.1812], type: "agreement" },
+            { date: "1803-08-14", event: "Treaty with Amrit Rao of Poonah", location: [18.5204, 73.8567], type: "treaty" },
+            { date: "1803-08-31", event: "Instrument under Governor General in Council delivered to Nizam", location: [17.3850, 78.4867], type: "instrument" },
+            { date: "1803-09-04", event: "Agreement with Raja Himnut Bahadur", location: [26.9124, 75.7873], type: "agreement" },
+            { date: "1803-09-29", event: "Treaty of Alliance and friendship with Raja of Bhurtpore", location: [27.2173, 77.4895], type: "treaty" },
+            { date: "1803-11-11", event: "Treaty of Alliance and friendship with Raja Macherry", location: [27.5625, 77.6710], type: "treaty" },
+            { date: "1803-11-11", event: "Treaty with Raja of Bunaward", location: [27.4911, 75.0167], type: "treaty" },
+            { date: "1803-12-13", event: "Treaty of Amity and Alliance with Raja of Gyepore", location: [26.9124, 75.7873], type: "treaty" },
+            { date: "1803-12-10", event: "Treaty with Raja of Soonth", location: [23.2224, 69.7556], type: "treaty" },
+            { date: "1803-12-10", event: "Treaty of Amity and Alliance with Raja Umbajee Kao", location: [26.2146, 78.1746], type: "treaty" },
+            { date: "1803-12-10", event: "Supplementary Article to Treaty of Bassein", location: [19.0760, 72.8777], type: "article" },
+            { date: "1803-12-17", event: "Treaty of Peace and friendship with Raja of Berar", location: [21.1458, 79.0882], type: "treaty" },
+            { date: "1803-12-22", event: "Treaty of Amity and Alliance with Raja of Joudhpore", location: [26.2389, 73.0243], type: "treaty" },
+            { date: "1803-12-30", event: "Supplementary Treaty with Raja of Mysore", location: [12.2958, 76.6394], type: "treaty" },
+            { date: "1803-12-01", event: "Treaty of Peace and Friendship with Dowlut Rao Scindia", location: [26.2041, 78.1570], type: "treaty" },
+            { date: "1804-01-06", event: "Additional Article to Treaty with Nizam", location: [17.3850, 78.4867], type: "article" },
+            { date: "1804-01-17", event: "Treaty of Amity and Alliance with Rana of Gohud", location: [26.4305, 78.5821], type: "treaty" },
+            { date: "1804-02-06", event: "Treaty with Sobahdar of Jhansi", location: [25.4484, 78.5685], type: "treaty" },
+            { date: "1804-02-27", event: "Treaty of Alliance and mutual Defence with Dowlut Rao Scindia", location: [26.2041, 78.1570], type: "treaty" },
+            { date: "1804-03-16", event: "Treaty concluded with Rao Raja Pareochet of Outteca", location: [26.4853, 77.8398], type: "treaty" },
+            { date: "1804-04-25", event: "Partition Treaty of Hyderabad", location: [17.3850, 78.4867], type: "treaty" },
+            { date: "1804-05-14", event: "Partition Treaty of Poona", location: [18.5204, 73.8567], type: "treaty" },
+            { date: "1804-07-17", event: "Political Treaty with Raja of Colapore", location: [16.6956, 74.2317], type: "treaty" },
+            { date: "1804-07-17", event: "Maritime Treaty with Raja of Colapore", location: [16.6956, 74.2317], type: "treaty" },
+            { date: "1804-09-22", event: "Ikrar-nameh or obligation of allegiance with Maha Raja Beejrumajeet", location: [25.5941, 85.1376], type: "obligation" },
+            { date: "1804-09-22", event: "Sunnud granted to Maha Raja Beejrumajeet", location: [25.5941, 85.1376], type: "sunnud" },
+            { date: "1804-11-25", event: "Treaty with Raja of Pertabgurh", location: [24.5587, 73.6843], type: "treaty" },
+            { date: "1805-01-14", event: "Treaty of Friendship and Alliance with Raja of Travancore", location: [8.5241, 76.9366], type: "treaty" },
+            { date: "1805-04-17", event: "Treaty of Amity and Alliance with Raja of Bhurtpore", location: [27.2173, 77.4895], type: "treaty" },
+            { date: "1805-04-21", event: "Definitive Treaty with Anund Rao Gwicowar", location: [22.3072, 73.1812], type: "treaty" },
+            { date: "1805-08-21", event: "Engagement on part of Zeiboo Sirea Begum of Sirdanab", location: [23.0225, 72.5714], type: "engagement" },
+            { date: "1805-11-22", event: "Definitive Treaty of Amity and Alliance with Dowlut Rao Scindia", location: [26.2041, 78.1570], type: "treaty" },
+            { date: "1805-12-28", event: "Treaty of Peace and Amity with Jeswant Rao Holkar", location: [22.7196, 75.8577], type: "treaty" },
+            { date: "1805-12-01", event: "Treaty of Friendship and Amity with Sirdars Ranjit Sing of Lahore and Futteh Sing", location: [31.5497, 74.3436], type: "treaty" },
+        ];
+
+        const icons = {
+            treaty: L.icon({ iconUrl: 'icons/handshake.png', iconSize: [32, 32] }),
+            sovereignty: L.icon({ iconUrl: 'icons/crown.png', iconSize: [32, 32] }),
+            cession: L.icon({ iconUrl: 'icons/cession.png', iconSize: [32, 32] }),
+            agreement: L.icon({ iconUrl: 'icons/agreement.png', iconSize: [32, 32] }),
+            alliance: L.icon({ iconUrl: 'icons/shield.png', iconSize: [32, 32] }),
+            political: L.icon({ iconUrl: 'icons/politics.png', iconSize: [32, 32] }),
+            trade: L.icon({ iconUrl: 'icons/trade.png', iconSize: [32, 32] }),
+            succession: L.icon({ iconUrl: 'icons/succession.png', iconSize: [32, 32] }),
+            redcoat: L.icon({ iconUrl: 'icons/redcoat.png', iconSize: [32, 32] })
+        };
+
+        // 将 grant 类型的事件使用 treaty 图标
+        events.forEach(event => {
+            if (event.type === 'grant') {
+                event.type = 'treaty';
+            }
+        });
+
+        // 将 sunnud 类型的事件使用 succession 图标
+        events.forEach(event => {
+            if (event.type === 'sunnud') {
+                event.type = 'succession';
+            }
+        });
+
+        // 将 engagement 类型的事件使用 political 图标
+        events.forEach(event => {
+            if (event.type === 'engagement') {
+                event.type = 'political';
+            }
+        });
+
+        // 将 arrangement 类型的事件使用 political 图标
+        events.forEach(event => {
+            if (event.type === 'arrangement') {
+                event.type = 'political';
+            }
+        });
+
+        // 将 convention 类型的事件使用 sovereignty 图标
+        events.forEach(event => {
+            if (event.type === 'convention') {
+                event.type = 'sovereignty';
+            }
+        });
+
+        // 将 obligation 类型的事件使用 alliance 图标
+        events.forEach(event => {
+            if (event.type === 'obligation') {
+                event.type = 'alliance';
+            }
+        });
+
+        // 将 instrument 类型的事件使用 sovereignty 图标
+        events.forEach(event => {
+            if (event.type === 'instrument') {
+                event.type = 'sovereignty';
+            }
+        });
+
+        // 将 article 类型的事件使用 agreement 图标
+        events.forEach(event => {
+            if (event.type === 'article') {
+                event.type = 'agreement';
+            }
+        });
+
+        const redcoatLocations = [
+            { name: "Kolkata", location: [22.5726, 88.3639] },
+            { name: "Mumbai", location: [19.0760, 72.8777] },
+            { name: "Chennai", location: [13.0827, 80.2707] }
+        ];
+
+        const redcoatMarkers = redcoatLocations.map(loc => 
+            L.marker(loc.location, { icon: icons.redcoat }).addTo(map).bindPopup(loc.name)
+        );
+
+        const eventMarkers = [];
+        const locationOffsets = {};
+
+        function addEventMarker(event) {
+            const locationKey = `${event.location[0]},${event.location[1]}`;
+            if (locationOffsets[locationKey]) {
+                event.location[0] += 0.1 * locationOffsets[locationKey];
+                event.location[1] += 0.1 * locationOffsets[locationKey];
+                locationOffsets[locationKey]++;
+            } else {
+                locationOffsets[locationKey] = 1;
+            }
+
+            const eventMarker = L.marker(event.location, { icon: icons[event.type] })
+                .addTo(map)
+                .bindPopup(`<b>${event.date}</b><br>${event.event}`);
+            eventMarkers.push(eventMarker);
+
+            const nearestRedcoat = getNearestRedcoat(event.location);
+            L.polyline([nearestRedcoat.location, event.location], { color: 'red', weight: 2 })
+                .addTo(map);
+        }
+
+        function getNearestRedcoat(eventLocation) {
+            let nearestRedcoat = redcoatLocations[0];
+            let minDistance = Infinity;
+            redcoatLocations.forEach(redcoat => {
+                const distance = Math.sqrt(
+                    Math.pow(eventLocation[0] - redcoat.location[0], 2) +
+                    Math.pow(eventLocation[1] - redcoat.location[1], 2)
+                );
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestRedcoat = redcoat;
+                }
+            });
+            return nearestRedcoat;
+        }
+
+        function updateEvent() {
+            if (eventIndex < events.length) {
+                addEventMarker(events[eventIndex]);
+                eventIndex++;
+            }
+        }
+
+        let eventIndex = 0;
+        setInterval(updateEvent, 3000); // 每3秒显示一个事件
+
+        // Function to create a black and white mosaic
+        function createMosaic(ctx, width, height, pixelSize) {
+            for (let y = 0; y < height; y += pixelSize) {
+                for (let x = 0; x < width; x += pixelSize) {
+                    const gray = Math.floor(Math.random() * 256);
+                    ctx.fillStyle = `rgb(${gray},${gray},${gray})`;
+                    ctx.fillRect(x, y, pixelSize, pixelSize);
+                }
+            }
+        }
+
+        // Define the bounds for the regions
+        const regions = [
+            // Kashmir-Aksai Chin
+            { bounds: [[32.0, 76.0], [36.0, 80.0]] },
+            // Arunachal Pradesh
+            { bounds: [[26.0, 91.5], [29.5, 97.5]] },
+            // Taiwan
+            { bounds: [[21.0, 119.0], [25.3, 122.0]] },
+            // South China Sea
+            { bounds: [[4.0, 109.0], [22.0, 121.0]] }
+        ];
+
+        regions.forEach(region => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 200;
+            const ctx = canvas.getContext('2d');
+            createMosaic(ctx, canvas.width, canvas.height, 10);
+            L.imageOverlay(canvas.toDataURL(), region.bounds).addTo(map);
+        });
+
+        // Code to extract yellow regions from an image and overlay them on the map
+        async function extractYellowRegions(imagePath) {
+            const response = await fetch(imagePath);
+            const blob = await response.blob();
+            const imageBitmap = await createImageBitmap(blob);
+            const canvas = document.createElement('canvas');
+            canvas.width = imageBitmap.width;
+            canvas.height = imageBitmap.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(imageBitmap, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            const yellowMask = [];
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                if (r > 200 && g > 200 && b < 150) {
+                    yellowMask.push({ x: (i / 4) % canvas.width, y: Math.floor((i / 4) / canvas.width) });
+                }
+            }
+
+            return yellowMask;
+        }
+
+        function overlayYellowRegions(yellowMask, map) {
+            yellowMask.forEach(pixel => {
+                const latLng = map.containerPointToLatLng([pixel.x, pixel.y]);
+                L.circleMarker(latLng, { color: 'yellow', radius: 1 }).addTo(map);
+            });
+        }
+
+        (async function() {
+            const yellowMask = await extractYellowRegions('C:/Users/28322/Desktop/7613.jpg');
+            overlayYellowRegions(yellowMask, map);
+        })();
+    </script>
+</body>
+</html>
